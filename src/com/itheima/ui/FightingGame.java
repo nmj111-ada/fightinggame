@@ -70,7 +70,7 @@ public class FightingGame {
 
                 //5.4玩家回合：选择行动
                 //1.普通攻击2.强力一击（消耗10点hp）3.生命回复技能
-                System.out.println("请选择行动：1.普通攻击2.强力一击（消耗10点hp）3.生命回复技能");
+                System.out.println("请选择行动：1.普通攻击 2.强力一击 3.生命回复技能 4.回复魔力");
                 playerTurn(player, enemy);
                 //5.5判断敌人是否死亡
                 if(!enemy.isAlive()) {
@@ -121,12 +121,10 @@ public class FightingGame {
                 if(choice.equals("y")) {
                     System.out.println("游戏继续！");
                     count++;
-                    continue;
                 } else if (choice.equals("n")) {
                     break;
                 }else {
                     System.out.println("无效输入！默认继续游戏！");
-                    continue;
                 }
             }
         }
@@ -140,17 +138,17 @@ public class FightingGame {
     //获取血量条
     public String getHealthBar(String name,int HP,int maxHP) {
         //满血状态下打印20个方块
-        String s = ": [";
-        String healthBar = name +s;
+        StringBuilder healthBar = new StringBuilder();
+        healthBar.append(name).append(": [");
         int length = (int) (HP * 20.0 / maxHP);
         for (int i = 0; i < length; i++) {
-            healthBar += "█";
+            healthBar.append("█");
         }
         for (int i = length; i < 20; i++) {
-            healthBar += "░";
+            healthBar.append("░");
         }
-        healthBar += "] " + HP + "/" + maxHP;
-        return healthBar;
+        healthBar.append("] ").append(HP).append("/").append(maxHP);
+        return healthBar.toString();
     }
 
     //创建玩家角色，参数是玩家用户名
@@ -213,32 +211,45 @@ public class FightingGame {
             System.out.println("属性点数不足！");
             mpPoints = points;
         }
-        points = points - mpPoints;
         System.out.println("您分配的属性为：HP：" + hpPoints + "攻击：" + attackPoints + "防御：" + defensePoints + "蓝量：" + mpPoints);
 
-        HeroCharacter player = new HeroCharacter(username, 100+hpPoints * 10, 10+attackPoints * 2, 0+defensePoints * 1, 50+mpPoints * 10);
+        HeroCharacter player = new HeroCharacter(username, 100+hpPoints * 10, 10+attackPoints * 2, defensePoints , 50+mpPoints * 10);
 
         //添加玩家技能
         player.skillList.add("普通攻击");
         player.skillList.add("强力一击");
         player.skillList.add("生命汲取");
+        player.skillList.add("回复魔力");
         return player;
     }
 
-    //玩家回合：1.普通攻击2.强力一击（消耗10点hp）3.生命回复技能，消耗10hp，回复0-20hp
+    //玩家回合：1.普通攻击2.强力一击（消耗10点hp）3.生命回复技能，消耗10hp，回复0-20hp 4.回复魔力，消耗10HP恢复10MP
     //玩家技能消耗5MP
     public void playerTurn(HeroCharacter player, EnemyCharacters enemy) {
         System.out.println("========你的回合========");
         System.out.println("1.普通攻击");
         System.out.println("2.强力一击（消耗10点hp）");
         System.out.println("3.生命回复技能");
-        System.out.println("选择行动（1-3）：");
+        System.out.println("4.回复魔力，消耗10HP恢复10MP");
+        System.out.println("选择行动（1-4）：");
         Scanner sc = new Scanner(System.in);
         int choose = sc.nextInt();
+        if(choose < 1 || choose > 4) {
+            System.out.println("无效输入！默认选择普通攻击");
+            choose = 1;
+        }
 
         switch (choose) {
-            default:
-                System.out.println("无效输入！默认选择普通攻击");
+            case 4:
+                //回复魔力
+                if(player.HP < 10) {
+                    System.out.println("你的hp不足10点，无法使用回复魔力");
+                    break;
+                }
+                player.HP -= 10;
+                player.MP += 10;
+                System.out.println(player.name + "使用了回复魔力！恢复了10点mp");
+                break;
             case 1:
                 //普通攻击
                 int damage1 = calculateDamage(player.attack , enemy.defense);
@@ -272,8 +283,12 @@ public class FightingGame {
                 } else {
                     int healAmount = (int) (Math.random() * 21);
                     player.heal(healAmount);
+                    player.MP -= 5;
                     System.out.println(player.name + "使用了生命回复！回复了" + healAmount + "点hp");
                 }
+            default:
+                System.out.println("无效输入！默认选择普通攻击");
+                break;
         }
     }
 
@@ -289,7 +304,7 @@ public class FightingGame {
     public void enemyTurn(EnemyCharacters enemy, HeroCharacter player) {
         System.out.println("========敌人回合========");
         int enemyDamage = calculateDamage(enemy.attack, player.defense);
-        String action = "普通攻击";
+        String action;
         Random r = new Random();
         int num = r.nextInt(10);
         if (num < 5) {
@@ -308,20 +323,47 @@ public class FightingGame {
                 System.out.println(enemy.name + "对" + player.name + "使用了普通攻击！造成了" + enemyDamage + "点伤害");
                 break;
             case "猛击":
+                if(enemy.MP < 5) {
+                    //蓝不够使用普通攻击
+                    player.takeDamage(enemyDamage);
+                    System.out.println(enemy.name + "对" + player.name + "使用了普通攻击！造成了" + enemyDamage + "点伤害");
+                    break;
+                }
+                enemy.MP -= 5;
                 int enemyDamage2 = calculateDamage((int)(enemy.attack * 1.5), player.defense);
                 player.takeDamage(enemyDamage2);
                 System.out.println(enemy.name + "对" + player.name + "使用了猛击！造成了" + enemyDamage2 + "点伤害");
                 break;
             case "快速攻击":
+                if(enemy.MP < 5) {
+                    //蓝不够使用普通攻击
+                    player.takeDamage(enemyDamage);
+                    System.out.println(enemy.name + "对" + player.name + "使用了普通攻击！造成了" + enemyDamage + "点伤害");
+                    break;
+                }
+                enemy.MP -= 5;
                 int enemyDamage3 = calculateDamage((int)(enemy.attack * 0.5), player.defense) * 2;
                 player.takeDamage(enemyDamage3);
                 System.out.println(enemy.name + "对" + player.name + "使用了快速攻击！造成了" + enemyDamage3 + "点伤害");
                 break;
             case "防御姿态":
-                enemy.defending = true;
+                if(enemy.MP < 5) {
+                    //蓝不够使用普通攻击
+                    player.takeDamage(enemyDamage);
+                    System.out.println(enemy.name + "对" + player.name + "使用了普通攻击！造成了" + enemyDamage + "点伤害");
+                    break;
+                }
+                enemy.MP -= 5;
                 System.out.println(enemy.name + "对" + player.name + "使用了防御姿态！下回合伤害减半");
                 break;
             case "火球术":
+                if(enemy.MP < 5) {
+                    //蓝不够使用普通攻击
+                    player.takeDamage(enemyDamage);
+                    System.out.println(enemy.name + "对" + player.name + "使用了普通攻击！造成了" + enemyDamage + "点伤害");
+                    break;
+                }
+                enemy.MP -= 5;
                 int enemyDamage4 = calculateDamage((int)(enemy.attack * 1.8), player.defense);
                 player.takeDamage(enemyDamage4);
                 System.out.println(enemy.name + "对" + player.name + "使用了火球术！造成了" + enemyDamage4 + "点伤害");
