@@ -22,15 +22,16 @@ public class FightingGame {
         System.out.println("拥有技能为：" + "\n" + player.showSkill());
 
         //4.创建多个敌人列表
-        //name:初级战士 hp:80 atk:15 def:10 skill:猛击（150%伤害）
-        //敏捷刺客 60 20 5 快速攻击（2次50%伤害）
-        //重装坦克 120 10 20 防御姿态（下回合伤害减半，defending=true）
-        //神秘法师 70 25 8 火球术（180%伤害）（180%伤害）
+        //name:初级战士 hp:80 atk:15 def:10 MP:50 skill:猛击（150%伤害）消耗5MP
+        //敏捷刺客 60 20 5 50 快速攻击（2次50%伤害）消耗5MP
+        //重装坦克 120 10 20 50 防御姿态（下回合伤害减半，defending=true）消耗10MP
+        //神秘法师 70 25 8 100 火球术（180%伤害）（180%伤害）消耗20MP
+        //蓝量为0无法释放技能
         ArrayList<EnemyCharacters> enemyList = new ArrayList<>();
-        enemyList.add(new EnemyCharacters("初级战士", 80, 15, 10, "猛击"));
-        enemyList.add(new EnemyCharacters("敏捷刺客", 60, 20, 5, "快速攻击"));
-        enemyList.add(new EnemyCharacters("重装坦克", 120, 10, 20, "防御姿态"));
-        enemyList.add(new EnemyCharacters("神秘法师", 70, 25, 8, "火球术"));
+        enemyList.add(new EnemyCharacters("初级战士", 80, 15, 10, "猛击", 50));
+        enemyList.add(new EnemyCharacters("敏捷刺客", 60, 20, 5, "快速攻击", 50));
+        enemyList.add(new EnemyCharacters("重装坦克", 120, 10, 20, "防御姿态", 50));
+        enemyList.add(new EnemyCharacters("神秘法师", 70, 25, 8, "火球术", 100));
 
         //准备战斗
         int count = 1;  //记录当前是跟第几个敌人进行战斗
@@ -159,10 +160,10 @@ public class FightingGame {
         System.out.println("您的角色名为：" + username);
 
         //属性分配
-        int points = 20;
+        int points = 30;
 
-        System.out.println("您有" + points + "点属性点，可以分配给角色的属性为：HP、攻击、防御");
-        System.out.println("请输入您要分配的属性点数（HP、攻击、防御）：");
+        System.out.println("您有" + points + "点属性点，可以分配给角色的属性为：HP、攻击、防御、蓝量");
+        System.out.println("请输入您要分配的属性点数（HP、攻击、防御、蓝量）：");
         System.out.println("生命值每点加10hp");
         Scanner sc = new Scanner(System.in);
         int hpPoints = sc.nextInt();
@@ -171,7 +172,7 @@ public class FightingGame {
             hpPoints = 0;
         }
         if(hpPoints > points) {
-            System.out.println("属性点数不能超过20！默认分配20点");
+            System.out.println("属性点数不能超过30！默认分配30点");
             hpPoints = points;
         }
 
@@ -201,19 +202,31 @@ public class FightingGame {
             System.out.println("属性点数不足！");
             defensePoints = points;
         }
-        points = points - defensePoints;
-        System.out.println("您分配的属性为：HP：" + hpPoints + "攻击：" + attackPoints + "防御：" + defensePoints);
 
-        HeroCharacter plyer = new HeroCharacter(username, 100+hpPoints * 10, 10+attackPoints * 2, 0+defensePoints * 1);
+        System.out.println("蓝量每点加5MP");
+        int mpPoints = sc.nextInt();
+        if(mpPoints < 0) {
+            System.out.println("无效输入！默认分配0点");
+            mpPoints = 0;
+        }
+        if(mpPoints > points) {
+            System.out.println("属性点数不足！");
+            mpPoints = points;
+        }
+        points = points - mpPoints;
+        System.out.println("您分配的属性为：HP：" + hpPoints + "攻击：" + attackPoints + "防御：" + defensePoints + "蓝量：" + mpPoints);
+
+        HeroCharacter player = new HeroCharacter(username, 100+hpPoints * 10, 10+attackPoints * 2, 0+defensePoints * 1, 50+mpPoints * 10);
 
         //添加玩家技能
-        plyer.skillList.add("普通攻击");
-        plyer.skillList.add("强力一击");
-        plyer.skillList.add("生命汲取");
-        return plyer;
+        player.skillList.add("普通攻击");
+        player.skillList.add("强力一击");
+        player.skillList.add("生命汲取");
+        return player;
     }
 
     //玩家回合：1.普通攻击2.强力一击（消耗10点hp）3.生命回复技能，消耗10hp，回复0-20hp
+    //玩家技能消耗5MP
     public void playerTurn(HeroCharacter player, EnemyCharacters enemy) {
         System.out.println("========你的回合========");
         System.out.println("1.普通攻击");
@@ -238,6 +251,11 @@ public class FightingGame {
                     System.out.println("你的hp不足10点，无法使用强力一击");
                     break;
                 }
+                if(player.MP < 5) {
+                    System.out.println("你的mp不足5点，无法使用强力一击");
+                    break;
+                }
+                player.MP -= 5;
                 int Damage2 = calculateDamage((int)(player.attack * 1.8), enemy.defense);
                 enemy.takeDamage(Damage2);
                 player.takeDamage(10);
@@ -248,7 +266,10 @@ public class FightingGame {
                 if(player.HP < 10) {
                     System.out.println("你的hp不足10点，无法使用生命回复");
                     break;
-                }else{
+                }else if (player.MP < 5) {
+                    System.out.println("你的mp不足5点，无法使用生命回复");
+                    break;
+                } else {
                     int healAmount = (int) (Math.random() * 21);
                     player.heal(healAmount);
                     System.out.println(player.name + "使用了生命回复！回复了" + healAmount + "点hp");
