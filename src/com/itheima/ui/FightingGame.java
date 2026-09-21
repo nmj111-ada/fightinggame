@@ -85,6 +85,9 @@ public class FightingGame {
                 //5.7判断玩家是否死亡
                 if(!player.isAlive()) {
                     System.out.println("很遗憾，你被" + enemy.name + "击败了！");
+                    //敌人嘲讽，随机输出一句话
+                    //敌人嘲讽，随机输出一句话
+                    System.out.println(enemy.name + "嘲讽道：" + enemy.getRandomTaunt());
                     break;
                 }
                 round++;
