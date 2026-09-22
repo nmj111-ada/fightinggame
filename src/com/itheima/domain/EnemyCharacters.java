@@ -38,4 +38,15 @@ public class EnemyCharacters extends Characters {
         int index = (int) (Math.random() * tauntPhrases.length);
         return tauntPhrases[index];
     }
+
+    //对手被击败后随机掉落消耗品，有30%的概率掉落
+    //掉落的物品就在consumable包中随机选择一个
+    public Consumable dropConsumable() {
+        if (Math.random() > 0.3) {
+            return null;
+        }
+        Consumable[] consumables = Consumable.getConsumables();
+        int index = (int) (Math.random() * consumables.length);
+        return consumables[index];
+    }
 }

@@ -1,5 +1,6 @@
 package com.itheima.ui;
 
+import com.itheima.domain.Consumable;
 import com.itheima.domain.EnemyCharacters;
 import com.itheima.domain.HeroCharacter;
 
@@ -70,11 +71,19 @@ public class FightingGame {
 
                 //5.4玩家回合：选择行动
                 //1.普通攻击2.强力一击（消耗10点hp）3.生命回复技能
-                System.out.println("请选择行动：1.普通攻击 2.强力一击 3.生命回复技能 4.回复魔力");
+                System.out.println("请选择行动：1.普通攻击 2.强力一击 3.生命回复技能 4.回复魔力 5.使用消耗品");
                 playerTurn(player, enemy);
                 //5.5判断敌人是否死亡
                 if(!enemy.isAlive()) {
                     System.out.println("恭喜！你击败了" + enemy.name);
+                    //击败对手后，对手有概率掉落消耗品
+                    Consumable drop = enemy.dropConsumable();
+                    if (drop != null) {
+                        player.addItem(drop.getName(), 1);
+                        System.out.println(enemy.name + "掉落了：" + drop.getName());
+                    } else {
+                        System.out.println(enemy.name + "没有掉落任何东西。");
+                    }
                     wins++;
                     break;
                 }
@@ -92,7 +101,6 @@ public class FightingGame {
                 }
                 round++;
             }
-            wins++;
             System.out.println("=======第" + count + "场战斗结束！=======");
             System.out.println("=======下面开始战斗结算=======");
 
@@ -223,7 +231,11 @@ public class FightingGame {
         player.skillList.add("强力一击");
         player.skillList.add("生命汲取");
         player.skillList.add("回复魔力");
-
+        
+        //给玩家一些初始消耗品（道具名，数量）
+        player.addItem("桃子", 1);
+        player.addItem("花酿鸡", 1);
+        
         return player;
     }
 
@@ -235,15 +247,33 @@ public class FightingGame {
         System.out.println("2.强力一击（消耗10点hp）");
         System.out.println("3.生命回复技能");
         System.out.println("4.回复魔力，消耗10HP恢复10MP");
-        System.out.println("选择行动（1-4）：");
+        System.out.println("5.使用消耗品");
+        System.out.println("选择行动（1-5）：");
         Scanner sc = new Scanner(System.in);
         int choose = sc.nextInt();
-        if(choose < 1 || choose > 4) {
+        if(choose < 1 || choose > 5) {
             System.out.println("无效输入！默认选择普通攻击");
             choose = 1;
         }
 
         switch (choose) {
+            case 5:
+                //使用消耗品：先展示背包（每个道具后面带数量，例如：桃子 X 3），再按名字选择
+                System.out.println("你的背包有：");
+                System.out.println(player.showPackage());
+                System.out.println("请选择消耗品（输入消耗品名称）：");
+                String item = sc.next();
+                Consumable used = player.useItem(item);
+                if (used != null) {
+                    System.out.println(player.name + "使用了" + used.getName());
+
+                    player.heal(used.getNum());
+                    System.out.println(player.name + "恢复了" + used.getNum() + "点hp");
+
+                } else {
+                    System.out.println("你没有这个消耗品！");
+                }
+                break;
             case 4:
                 //回复魔力
                 if(player.HP < 10) {
