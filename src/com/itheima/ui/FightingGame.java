@@ -223,6 +223,7 @@ public class FightingGame {
         player.skillList.add("强力一击");
         player.skillList.add("生命汲取");
         player.skillList.add("回复魔力");
+
         return player;
     }
 
@@ -304,6 +305,7 @@ public class FightingGame {
         return damage;
     }
 
+    //对手回合
     public void enemyTurn(EnemyCharacters enemy, HeroCharacter player) {
         System.out.println("========敌人回合========");
         int enemyDamage = calculateDamage(enemy.attack, player.defense);
